@@ -1,0 +1,11 @@
+Flask==2.2.3
+Flask-Cors==3.0.10
+SQLAlchemy==1.4.52
+manuf==1.1.2
+ping3==4.0.7
+pyodbc==5.1.0
+pysmb==1.2.9
+psutil==5.9.4
+scapy==2.5.0
+Werkzeug<3.0.0
+pysnmp==4.4.12

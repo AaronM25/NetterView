@@ -1,0 +1,1552 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>NetterView</title>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+
+    
+    :root {
+      --bg-main: #f4f6fb;
+      --bg-panel: #ffffff;
+      --bg-sidebar: #f1f3f9;
+      --header-bg: #ffffff;
+      --border-color: #d4dbe7;
+      --text: #1f2933;
+      --accent: #2563eb;
+      --accent-contrast: #ffffff;
+      --button-hover-bg: #1d4ed8;
+      --button-hover-shadow: rgba(37, 99, 235, 0.25);
+      --input-bg: #ffffff;
+      --badge-new: #16a34a;
+      --badge-updated: #f97316;
+      --badge-offline: #6b7280;
+      --risk-low: #10b981;
+      --risk-medium: #f59e0b;
+      --risk-high: #ef4444;
+      --risk-critical: #7f1d1d;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial;
+      background: var(--bg-main);
+      color: var(--text);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    body.dark {
+      --bg-main: #000000;
+      --bg-panel: #111111;
+      --bg-sidebar: #111111;
+      --header-bg: #111111;
+      --border-color: #0f0;
+      --text: #0f0;
+      --accent: #0f0;
+      --accent-contrast: #000;
+      --button-hover-bg: #0f0;
+      --button-hover-shadow: rgba(0, 255, 0, 0.6);
+      --input-bg: #000000;
+    }
+
+    h2, h3, label, p, span {
+      color: var(--text);
+      transition: color 0.3s ease, text-shadow 0.3s ease;
+    }
+
+    body.dark h2,
+    body.dark h3,
+    body.dark label,
+    body.dark p,
+    body.dark span {
+      text-shadow: 0 0 5px #0f0, 0 0 10px #0f0;
+    }
+
+    #header {
+      display: grid;
+      grid-template-columns: 260px 1fr 360px;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border-color);
+      gap: 24px;
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    body.dark #header {
+      box-shadow: none;
+      border-bottom-width: 2px;
+    }
+
+    #logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    #logo img {
+      width: clamp(340px, 28vw, 520px);
+      height: auto;
+      filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.25));
+      transition: filter 0.3s ease;
+    }
+
+    body.dark #logo img {
+      filter: drop-shadow(0 0 5px #0f0);
+    }
+
+    #controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .interface-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      width: 100%;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .interface-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      min-width: min(100%, 380px);
+      flex: 0 1 380px;
+    }
+
+    #controls h2 {
+      margin: 0;
+      font-size: clamp(2rem, 2.6vw, 3rem);
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      width: 100%;
+      min-height: 44px;
+      flex-wrap: wrap;
+    }
+
+    .control-stack {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .control-stack label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .logo-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      margin: 0;
+      white-space: nowrap;
+      align-self: center;
+    }
+
+    #scanStatus,
+    #autoScanStatus {
+      margin-left: 0;
+    }
+
+    #controls select,
+    #controls button,
+    input,
+    #portRange {
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border-color);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-family: inherit;
+      transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      max-width: 250px;
+    }
+
+    #interfaceSelect {
+      width: 100%;
+      max-width: none;
+      min-width: 0;
+      height: 50px;
+      font-size: 1rem;
+    }
+
+    #scanBtn {
+      height: 50px;
+      min-width: 116px;
+      font-size: 1rem;
+      align-self: flex-end;
+    }
+
+    #scanTimeInput {
+      width: 150px;
+      height: 44px;
+      box-sizing: border-box;
+    }
+
+    #controls button,
+    #healthCheckBtn,
+    #portScanBtn,
+    #scanDrivesBtn {
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border: 1px solid var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+    }
+
+    #controls button:hover,
+    #healthCheckBtn:hover,
+    #portScanBtn:hover,
+    #scanDrivesBtn:hover {
+      background: var(--button-hover-bg);
+      box-shadow: 0 8px 18px var(--button-hover-shadow);
+    }
+
+    body.dark #controls button,
+    body.dark #healthCheckBtn,
+    body.dark #portScanBtn,
+    body.dark #scanDrivesBtn {
+      background: #000;
+      color: #0f0;
+      border: 1px solid #0f0;
+    }
+
+    body.dark #controls button:hover,
+    body.dark #healthCheckBtn:hover,
+    body.dark #portScanBtn:hover,
+    body.dark #scanDrivesBtn:hover {
+      background: #0f0;
+      color: #000;
+      box-shadow: 0 0 10px #0f0;
+    }
+
+    #controls select:focus,
+    input:focus,
+    button:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+
+    #spinner {
+      display: none;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    #dashboard {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(145px, 1fr));
+      gap: 12px 20px;
+      min-width: 0;
+      align-self: stretch;
+      align-content: center;
+      justify-self: end;
+      width: min(100%, 460px);
+    }
+
+    #dashboard p {
+      margin: 0;
+      font-size: 0.95em;
+      white-space: nowrap;
+    }
+
+    #dashboard p span {
+      font-weight: 700;
+    }
+
+    #summary-line {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.78em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-new { background: rgba(22, 163, 74, 0.15); color: var(--badge-new); }
+    .badge-updated { background: rgba(249, 115, 22, 0.15); color: var(--badge-updated); }
+    .badge-offline { background: rgba(107, 114, 128, 0.2); color: var(--badge-offline); }
+    #main-layout {
+      display: flex;
+      height: calc(100vh - 176px);
+    }
+
+    #network {
+      flex: 1;
+      position: relative;
+      background: var(--bg-panel);
+      margin: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    #sidebar {
+      width: 360px;
+      padding: 16px;
+      background: var(--bg-sidebar);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .section {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+    }
+
+    .section h3,
+    .section h4 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .info-block {
+      background: var(--bg-panel);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.85em;
+    }
+
+    .hidden { display: none; }
+
+    #portResults, #driveResults, #healthResults, #historyDetail {
+      margin-top: 10px;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+
+    .port-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.85em;
+    }
+
+    .port-table th, .port-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .port-table th {
+      background: rgba(37, 99, 235, 0.08);
+    }
+
+    #historyList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    #historyList li {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      font-size: 0.82em;
+    }
+
+    #historyList li:hover,
+    #historyList li.active {
+      background: rgba(37, 99, 235, 0.12);
+    }
+
+    .risk-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .risk-low { background: rgba(16, 203, 141, 0.18); color: var(--risk-low); }
+    .risk-medium { background: rgba(245, 158, 11, 0.16); color: var(--risk-medium); }
+    .risk-high { background: rgba(239, 68, 68, 0.16); color: var(--risk-high); }
+    .risk-critical { background: rgba(127, 29, 29, 0.2); color: #fecaca; }
+
+    @media (max-width: 1200px) {
+      #header {
+        grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+      }
+
+      #dashboard {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(4, minmax(0, max-content));
+        justify-content: center;
+        justify-self: stretch;
+        width: auto;
+      }
+
+      #summary-line {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 860px) {
+      #header {
+        grid-template-columns: 1fr;
+        padding: 18px;
+      }
+
+      #logo {
+        justify-content: center;
+      }
+
+      #controls {
+        align-items: stretch;
+      }
+
+      .interface-row,
+      .status-row,
+      .control-stack {
+        justify-content: center;
+      }
+
+      #interfaceSelect {
+        width: 100%;
+      }
+
+      .interface-actions {
+        width: 100%;
+        min-width: 0;
+      }
+
+      #dashboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: stretch;
+        width: auto;
+      }
+
+      #main-layout {
+        height: calc(100vh - 270px);
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="logo">
+      <img src="/static/assets/NetterView3.png" alt="NetterView Logo">
+      <label class="logo-toggle">
+        <input type="checkbox" id="darkModeToggle"> Dark Mode
+      </label>
+    </div>
+    <div id="controls">
+      <div class="interface-row">
+        <h2>Select Interface</h2>
+        <div class="interface-actions">
+          <select id="interfaceSelect"></select>
+          <button id="scanBtn">[SCAN]</button>
+        </div>
+      </div>
+      <div class="status-row">
+        <span id="spinner">Scanning...</span>
+        <span id="scanStatus"></span>
+        <div class="control-stack">
+          <input type="number" id="scanTimeInput" placeholder="minutes" min="1">
+          <label>
+            <input type="checkbox" id="autoScanToggle"> Auto Scan
+          </label>
+        </div>
+        <span id="autoScanStatus"></span>
+      </div>
+    </div>
+    <div id="dashboard">
+      <p>Total Devices: <span id="count-total">0</span></p>
+      <p>Avg Latency: <span id="count-latency">0 ms</span></p>
+      <p>Routers: <span id="count-router">0</span></p>
+      <p>Printers: <span id="count-printer">0</span></p>
+      <p>Desktops: <span id="count-desktop">0</span></p>
+      <p>Phones: <span id="count-phone">0</span></p>
+      <div id="summary-line">
+        <span id="summary-new" class="badge badge-new">0 New</span>
+        <span id="summary-updated" class="badge badge-updated">0 Updated</span>
+        <span id="summary-offline" class="badge badge-offline">0 Offline</span>
+      </div>
+    </div>
+  </div>
+  <div id="main-layout">
+    <div id="network">
+      <canvas id="matrixCanvas"></canvas>
+      <div id="networkGraph" style="position: relative; z-index: 1; width: 100%; height: 100%;"></div>
+    </div>
+    <div id="sidebar">
+      <div class="section">
+        <h3>Device Details</h3>
+        <p>IP: <span id="detail-ip">—</span></p>
+        <p>MAC: <span id="detail-mac">—</span></p>
+        <p>Host: <span id="detail-host">—</span></p>
+        <p>Vendor: <span id="detail-vendor">—</span></p>
+        <p>Latency: <span id="detail-latency">— ms</span></p>
+        <p>Status: <span id="detail-status">—</span></p>
+        <div id="changeBlock" class="info-block hidden">
+          <h4 style="margin-top:0;">Recent Changes</h4>
+          <ul id="changeList" style="margin:0; padding-left:18px;"></ul>
+        </div>
+      </div>
+      <div id="riskInsights" class="info-block hidden">
+        <h4 style="margin-top:0;">Exposure</h4>
+        <div id="riskSummary"></div>
+        <ul id="riskList" style="margin:8px 0 0; padding-left:18px;"></ul>
+      </div>
+      <div class="section">
+        <label for="portRange">Port Range:</label>
+        <input type="text" id="portRange" placeholder="1-1024" style="width:90%; margin-bottom: 8px;">
+        <label style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+          <input type="checkbox" id="wellKnownOnly">
+          <span>Well-Known Ports Only</span>
+        </label>
+        <button id="portScanBtn" style="margin-top: 12px; width: 100%;">[PORT SCAN]</button>
+        <div id="portResults"></div>
+      </div>
+
+      <div class="section">
+        <button id="scanDrivesBtn" style="width:100%;">[SCAN DRIVES]</button>
+        <div id="driveResults"></div>
+      </div>
+
+      <div class="section">
+        <button id="healthCheckBtn" style="width:100%;">[HEALTH CHECK]</button>
+        <div id="healthResults"></div>
+      </div>
+
+      <div id="historyPanel" class="section">
+        <h3>Scan Timeline</h3>
+        <ul id="historyList"></ul>
+        <div id="historyDetail"></div>
+      </div>
+      <div class="section">
+      <h3>Network Analysis</h3>
+      <textarea id="aiQuestion" placeholder="Ask about the network..."></textarea>
+      <button id="aiAnalyzeBtn" style="width:100%; margin-top:6px;">[ASK AI]</button>
+      <div id="aiResponse" style="margin-top:10px; font-size:0.85em;"></div>
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/dom.js"></script>
+  <script>
+
+    let network, nodes = [], edges = [], interval;
+    let lastSelectedId = null;
+    let lastSourceIP = null;
+    let lastScanPayload = { devices: [], summary: {} };
+    let lastTopologyLinks = [];
+    let lastGatewayIP = null;
+
+    // Html elements to modify
+    const container = document.getElementById('network');
+    const riskSummary = document.getElementById('riskSummary');
+    const changeList = document.getElementById('changeList');
+    const riskList = document.getElementById('riskList');
+    const healthCheckBtn = document.getElementById('healthCheckBtn');
+    const select = document.getElementById('interfaceSelect');
+    const scanBtn = document.getElementById('scanBtn');
+    const detailIP = document.getElementById('detail-ip');
+    const summaryUpdated = document.getElementById('summary-updated');
+    const detailMAC = document.getElementById('detail-mac');
+    const healthResults = document.getElementById('healthResults');
+    const historyList = document.getElementById('historyList');
+    const detailVendor = document.getElementById('detail-vendor');
+    const summaryNew = document.getElementById('summary-new');
+    const detailLatency = document.getElementById('detail-latency');
+    const changeBlock = document.getElementById('changeBlock');
+    const spinner = document.getElementById('spinner');
+    const status = document.getElementById('scanStatus');
+    const summaryOffline = document.getElementById('summary-offline');
+    const detailHost = document.getElementById('detail-host');
+    const detailStatus = document.getElementById('detail-status');
+    const riskSection = document.getElementById('riskInsights');
+    const historyDetail = document.getElementById('historyDetail');
+    const scanTimeInput = document.getElementById('scanTimeInput');
+    const autoScanToggle = document.getElementById('autoScanToggle');
+    const autoScanStatus = document.getElementById('autoScanStatus');
+    let autoScanLoop = null;
+    const api = window.NetterViewAPI;
+    const dom = window.NetterViewDOM;
+    const ICONS = {
+      router: '/static/icons/router.png',
+      computer: '/static/icons/pc.png',
+      phone: '/static/icons/phone.png',
+      printer: '/static/icons/printer.png',
+      laptop: '/static/icons/laptop.png',
+      camera: '/static/icons/camera.png',
+      tv: '/static/icons/tv.png',
+      roku: '/static/icons/roku.png',
+      iot: '/static/icons/iot.png',
+      console: '/static/icons/console.png',
+      isp_gateway: '/static/icons/isp_gateway.png',
+      extender: '/static/icons/extender.png',
+      default: '/static/icons/pc.png'
+
+    };
+    
+
+    // Event Listeners
+    scanBtn.onclick = () => {
+      clearInterval(interval);  // stop any previous updates
+      const iface = select.value; // sets opt.value to iface
+      const yourIP = select.options[select.selectedIndex].textContent.match(/\((.*?)\)/)?.[1]; // Use regex to grab ip inside () from opt.textContent
+
+      // Disable button and show scanner
+      scanBtn.disabled = true;
+      spinner.style.display = 'inline';
+      
+      // Post to api scan with selected iface
+      api.postJson('/api/scan', { iface })
+      .then(data => {
+        // create "payload" from api/scan results then store in LastScanPayload
+        const payload = data;
+        lastScanPayload = payload;  // Stores results
+        lastSourceIP = yourIP || null;
+        buildNetwork(payload.devices || [], yourIP); // Send devices to build network 
+        updateSummary(payload.summary || {}); // update summary and dashboard
+        updateDashboard()
+        status.textContent = payload.session_id ? `Session #${payload.session_id} • ${payload.summary?.total || payload.devices?.length || 0} devices` : '';
+        loadScanHistory();
+
+        // Build topology links if devices were found
+
+        rebuildTopologyLinks(payload.devices || [], lastSourceIP);
+      })
+
+      .catch(err => {
+        alert('Error: ' + (err.message || err));
+      })
+      .finally(() => {
+        scanBtn.disabled = false;
+        spinner.style.display = 'none';
+      });
+    };
+    
+    // Run network health check and update devices with results
+    healthCheckBtn.addEventListener('click', () => {
+    if (!lastScanPayload.devices.length) {
+      healthResults.textContent = 'Run a network scan first.';
+      return;
+    }
+
+    healthResults.textContent = 'Running Health Check...';
+
+    api.postJson('/api/health-check', {
+        devices: lastScanPayload.devices,
+        source: lastSourceIP
+      })
+      .then(data => {
+        if (data.port_results) {
+          Object.values(data.port_results).forEach(result => {
+            const payloadDevice = lastScanPayload.devices.find(d => d.ip === result.ip);
+            if (payloadDevice) {
+              payloadDevice.open_ports = result.open_ports || [];
+              payloadDevice.risk = result.risk || null;
+            }
+
+            const node = nodes.find(n => n.ip === result.ip);
+            if (node) {
+              node.open_ports = result.open_ports || [];
+              node.risk = result.risk || null;
+            }
+          });
+        }
+
+        renderHealthCheck(data);
+      })
+      .catch(err => {
+        console.error('Health check error:', err);
+        healthResults.textContent = err.message || 'Health check failed.';
+      });
+  });
+    
+    // Load selected scan session and rebuild network view
+    historyList.addEventListener('click', evt => {
+    const li = evt.target.closest('li[data-session-id]');
+    if (!li) return;
+
+    historyList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+    li.classList.add('active');
+
+    const sessionId = li.dataset.sessionId;
+    historyDetail.textContent = 'Loading session details...';
+
+    api.getJson(`/api/scan-history/${sessionId}`)
+      .then(data => {
+        const snapshots = data.snapshots || [];
+
+        // Convert saved snapshot shape to the same shape buildNetwork expects
+        const devices = snapshots
+          .filter(d => d.status !== 'offline')
+          .map(d => ({
+            ip: d.ip,
+            mac: d.mac,
+            hostname: d.hostname,
+            vendor: d.vendor,
+            latency: d.latency,
+            type: d.dtype || 'device',   // saved scans use dtype
+            status: d.status || 'unchanged',
+            changes: d.changes || {},
+            insights: d.extra || {},
+            device_id: d.device_id,
+            open_ports: d.open_ports || [],
+            risk: d.risk || null
+          }));
+
+        const summary = {
+          total: devices.length,
+          new: snapshots.filter(d => d.status === 'new').length,
+          updated: snapshots.filter(d => d.status === 'updated').length,
+          offline: snapshots.filter(d => d.status === 'offline').length
+        };
+
+        const yourIP = data.session?.ip || null;
+
+        // Save loaded scan into current app state
+        lastScanPayload = { devices, summary };
+        lastSourceIP = yourIP;
+        lastTopologyLinks = [];
+        lastGatewayIP = null;
+        lastSelectedId = null;
+
+        // Rebuild graph + dashboard from old scan
+        buildNetwork(devices, yourIP);
+        updateSummary(summary);
+        updateDashboard();
+        renderHistoryDetail(snapshots);
+        rebuildTopologyLinks(devices, yourIP);
+      
+        document.getElementById('driveResults').textContent = '';
+        status.textContent = `Viewing saved scan #${sessionId}${data.session?.iface ? ` • ${data.session.iface}` : ''}`;
+      })
+      .catch(err => {
+        console.error(err);
+        historyDetail.textContent = err.message || 'Unable to load session details.';
+      });
+  });
+    
+    // Scan all devices for shared drives and display results
+    document.getElementById('scanDrivesBtn').addEventListener('click', () => {
+      const driveResults = document.getElementById('driveResults');
+      if (!nodes.length) {
+        driveResults.textContent = 'Run a scan first.';
+        return;
+      }
+      driveResults.textContent = 'Scanning devices for shared drives...';
+
+      const deviceList = lastScanPayload.devices
+        .filter(n => !!n.ip)
+        .map(n => ({ ip: n.ip }));
+
+      api.postJson('/api/scan-drives', { devices: deviceList })
+      .then(data => {
+        if (!data.drives.length) {
+          driveResults.textContent = 'No shared drives found.';
+          return;
+        }
+
+        renderDriveResults(data.drives || []);
+      })
+      .catch(err => {
+        driveResults.textContent = 'Error scanning for drives';
+        console.error(err);
+      });
+    });
+    // Scan selected device for open ports and show results
+    document.getElementById('portScanBtn').addEventListener('click', () => {
+      if (lastSelectedId == null) return;
+      const node = nodes.find(n => n.id === lastSelectedId);
+      if (!node?.ip) return;
+
+      const resultDiv = document.getElementById('portResults');
+      resultDiv.textContent = 'Scanning ports...';
+
+      api.postJson('/api/scan-ports', {
+          ip: node.ip,
+          mac: node.mac,
+          device_id: node.device_id,
+          ports: getPortList()
+        })
+      .then(data => {
+      const openPorts = data.open_ports || [];
+      const risk = data.risk || null;
+      node.open_ports = openPorts;
+      node.risk = risk;
+      const payloadDevice = lastScanPayload.devices.find(d => d.ip === node.ip);
+      if (payloadDevice) {
+        payloadDevice.open_ports = openPorts;
+        payloadDevice.risk = risk;
+      }
+      displayPorts(openPorts);
+      renderRisk(risk);
+    })
+      .catch(() => {
+        resultDiv.textContent = 'Port scan failed.';
+      });
+    });
+
+    // Toggle dark mode and rebuild network view
+    document.getElementById('darkModeToggle').addEventListener('change', () => {
+    document.body.classList.toggle('dark');
+    if (!network || !lastScanPayload.devices.length) return;
+
+     buildNetwork(lastScanPayload.devices, lastSourceIP);
+      applyTopologyLinks(lastTopologyLinks);
+   }
+  );
+
+    function runScanAndHealthCheck() {
+  // Prevent starting another scan while one is already running
+  if (scanBtn.disabled) {
+    return;
+  }
+
+  // Start the scan
+  scanBtn.click();
+
+  // Wait until the scan button is enabled again,
+  // which means your scan fetch has finished
+  const waitForScan = setInterval(() => {
+    if (!scanBtn.disabled) {
+      clearInterval(waitForScan);
+
+      // Now run health check after scan data exists
+      if (lastScanPayload.devices.length) {
+        healthCheckBtn.click();
+      } else {
+        healthResults.textContent = 'Auto scan finished, but no devices were found.';
+      }
+    }
+  }, 500);
+}
+
+    autoScanToggle.addEventListener('change', () => {
+      const enabled = autoScanToggle.checked;
+
+      if (enabled) {
+        const minutes = parseInt(scanTimeInput.value);
+
+        if (isNaN(minutes) || minutes <= 0) {
+          alert('Please enter a valid number of minutes.');
+          autoScanToggle.checked = false;
+          autoScanStatus.textContent = '';
+          return;
+        }
+
+        // Run scan + health check immediately
+        runScanAndHealthCheck();
+
+        clearInterval(autoScanLoop);
+
+        // Run scan + health check every X minutes
+        autoScanLoop = setInterval(() => {
+          runScanAndHealthCheck();
+        }, minutes * 60 * 1000);
+
+        autoScanStatus.textContent = `Auto scan every ${minutes} min`;
+
+      } else {
+        clearInterval(autoScanLoop);
+        autoScanLoop = null;
+        autoScanStatus.textContent = '';
+      }
+    });
+    
+    scanTimeInput.addEventListener('change', () => {
+      if (autoScanToggle.checked) {
+        autoScanToggle.checked = false;
+        clearInterval(autoScanLoop);
+        autoScanLoop = null;
+        autoScanStatus.textContent = 'Auto scan stopped. Turn it back on.';
+      }
+    });
+   
+
+
+    // Core Logic
+
+    function selectNode(params) {
+      const selectedId = params.nodes[0];
+      lastSelectedId = selectedId;
+
+      const node = nodes.find(n => n.id === selectedId);
+      if (!node) return;
+
+      detailIP.textContent = node.ip || 'N/A';
+      detailMAC.textContent = node.mac || 'N/A';
+      detailHost.textContent = node.hostname || 'N/A';
+      detailVendor.textContent = node.vendor || 'N/A';
+      detailLatency.textContent = node.latency != null ? node.latency + ' ms' : 'N/A';
+      detailStatus.textContent = (node.status || 'unknown').toUpperCase();
+
+      renderChanges(node.changes);
+      renderRisk(node.risk);
+
+      if (node.open_ports?.length) {
+        displayPorts(node.open_ports);
+      } 
+
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+
+      if (node.ip) {
+        interval = setInterval(() => {
+          api.getJson(`/api/latency/${node.ip}`)
+            .then(data => {
+              if (data.latency !== undefined) {
+                detailLatency.textContent = data.latency !== null
+                  ? data.latency + ' ms'
+                  : 'Timeout';
+
+                const color = getLatencyColor(data.latency);
+
+                network.body.data.nodes.update({
+                  id: node.id,
+                  color: {
+                    border: color
+                  }
+                });
+
+                node.latency = data.latency;
+              }
+            })
+            .catch(err => {
+              console.error('Latency error:', err);
+            });
+        }, 4000);
+      }
+    }
+
+    function deselectNode() {
+      lastSelectedId = null;
+      resetDetails();
+
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    }
+
+    function buildNetwork(data, yourIP) {
+      lastScanPayload.devices = data || [];
+      const isDark = document.body.classList.contains('dark');
+      const localDevice = (data || []).find(d => d.ip === yourIP);
+
+      const yourNode = {
+        id: 0,
+        label: 'You',
+        shape: 'circularImage',
+        image: localDevice ? getIconForDevice(localDevice) : ICONS.laptop,
+        type: localDevice?.type || 'laptop',
+        size: 30,
+        shapeProperties: {
+          useBorderWithImage: true
+        },
+        color: {
+          border: '#007bff',
+          background: isDark ? '#1e1e1e' : '#fff'
+        },
+        font: {
+          color: isDark ? '#fff' : '#000'
+        },
+        ip: yourIP,
+        mac: localDevice?.mac || null,
+        device_id: localDevice?.device_id || null,
+        vendor: localDevice?.vendor || 'Local Device',
+        latency: localDevice?.latency ?? 0,
+        hostname: localDevice?.hostname || 'Local Device',
+        status: localDevice?.status || 'unchanged',
+        changes: localDevice?.changes || {},
+        insights: localDevice?.insights || {},
+        open_ports: localDevice?.open_ports || [],
+        risk: localDevice?.risk || null,
+        title: [
+          `Host: ${localDevice?.hostname || 'Local Device'}`,
+          `IP: ${yourIP || 'n/a'}`,
+          `MAC: ${localDevice?.mac || 'N/A'}`,
+          `Vendor: ${localDevice?.vendor || 'Local Device'}`,
+          `Status: ${(localDevice?.status || 'unchanged').toUpperCase()}`
+        ].join('\n')
+      };
+
+      nodes = [yourNode];
+      edges = [];
+
+      // Passing the data for each device (d) excluding yourIP
+      (data || []).filter(d => d.ip !== yourIP).forEach((d, index) => {
+        const id = index + 1;
+        const borderColor = getStatusColor(d.status, d.latency);
+        const bgColor = isDark ? '#1e1e1e' : '#fff';
+        // set hover info
+        const hoverInfo = [
+          `Host: ${d.hostname || 'Unknown'}`,
+          `IP: ${d.ip}`,
+          `MAC: ${d.mac || 'N/A'}`,
+          `Vendor: ${d.vendor || 'N/A'}`,
+          `Status: ${(d.status || 'unknown').toUpperCase()}`
+        ].join('\n');
+
+       
+        // Builds nodes for other devices
+        nodes.push({
+          id,
+          label: d.ip,
+          shape: 'circularImage',
+          image: getIconForDevice(d),
+          size: 30,
+          color: {
+            border: borderColor,
+            background: bgColor
+          },
+          font: {
+            color: isDark ? '#fff' : '#000'
+          },
+          title: hoverInfo,
+          latency: d.latency,
+          ip: d.ip,
+          mac: d.mac,
+          device_id: d.device_id,
+          vendor: d.vendor,
+          hostname: d.hostname || null,
+          type: d.type,
+          status: d.status || 'Unchanged',
+          changes: d.changes || {},
+          insights: d.insights || {},
+          open_ports: d.open_ports || [],
+          risk: d.risk || null
+        });
+      });
+      // create the vis network
+      const dataSet = {
+        nodes: new vis.DataSet(nodes),
+        edges: new vis.DataSet(edges)
+      };
+      if (!network) {
+        network = new vis.Network(container, dataSet, {
+          layout: { improvedLayout: true, hierarchical: false },
+          physics: { enabled: true },
+          nodes: { borderWidth: 2 }
+        });
+
+        network.on('selectNode', selectNode);
+        network.on('deselectNode', deselectNode);
+      } else {
+        network.setData(dataSet);
+      }
+    }
+
+    // Apply saved topology links and connect unlinked devices to a fallback hub (gateway or "You")
+    function applyTopologyLinks(links) {
+      if (!network || !Array.isArray(links)) return;
+
+      const ipToId = new Map(
+        nodes.filter(n => !!n.ip).map(n => [n.ip, n.id])
+      );
+
+      edges = [];
+      const edgeSet = new Set();
+      const connectedNodeIds = new Set();
+
+      links.forEach((link, idx) => {
+        if (!link?.from_ip) return;
+
+        const fromId = ipToId.get(link.from_ip);
+        let targetIp = link.to_ip;
+
+        if (!targetIp || targetIp === link.from_ip) {
+          targetIp = lastGatewayIP;
+        }
+
+        const toId = ipToId.get(targetIp);
+
+        if (fromId == null || toId == null) {
+          console.log('Skipped edge', {
+            from_ip: link.from_ip,
+            to_ip: targetIp,
+            known_ips: [...ipToId.keys()],
+            lastGatewayIP
+          });
+          return;
+        }
+
+        const key = [fromId, toId].sort().join('-');
+        if (edgeSet.has(key)) return;
+        edgeSet.add(key);
+
+        connectedNodeIds.add(fromId);
+        connectedNodeIds.add(toId);
+
+        edges.push({
+          id: `t${idx}`,
+          from: fromId,
+          to: toId,
+          label: link.label || '',
+          font: { align: 'middle' },
+          color: {
+            color: '#94a3b8',
+            highlight: '#2563eb'
+          }
+        });
+      });
+
+      // pick fallback hub
+      let fallbackHubId = null;
+
+      if (lastGatewayIP && ipToId.has(lastGatewayIP)) {
+        fallbackHubId = ipToId.get(lastGatewayIP);
+      } else {
+        fallbackHubId = 0; // "You"
+      }
+
+      // connect all unlinked nodes to fallback hub
+      nodes.forEach((node) => {
+        if (node.id === fallbackHubId) return;
+        if (!node.ip) return;
+        if (connectedNodeIds.has(node.id)) return;
+
+        const key = [node.id, fallbackHubId].sort().join('-');
+        if (edgeSet.has(key)) return;
+        edgeSet.add(key);
+
+        edges.push({
+          id: `fallback-${node.id}`,
+          from: fallbackHubId,
+          to: node.id,
+          dashes: true,
+          color: { color: '#94a3b8' },
+        });
+      });
+
+      network.setData({
+        nodes: new vis.DataSet(nodes),
+        edges: new vis.DataSet(edges)
+      });
+
+    }
+
+    // Rebuild topology links from the current devices and source IP
+    function rebuildTopologyLinks(devices, sourceIp) {
+      lastTopologyLinks = [];
+      lastGatewayIP = null;
+
+      if (!devices?.length || !sourceIp) return;
+
+      api.postJson('/api/topology-links', {
+          devices,
+          source: sourceIp
+        })
+      .then(topo => {
+        lastGatewayIP = topo.gateway_ip || null;
+        lastTopologyLinks = topo.links || [];
+        applyTopologyLinks(lastTopologyLinks);
+      })
+      .catch(err => {
+        console.error('Topology link rebuild failed:', err);
+      });
+    }
+
+
+    // Rendering / UI
+
+    // Show device changes and hide section if none
+    function renderChanges(changes = {}) {
+      const entries = Object.entries(changes || {}).filter(([field]) => field !== 'latency');
+      if (!entries.length) {
+        changeBlock.classList.add('hidden');
+        dom.clear(changeList);
+        return;
+      }
+      changeBlock.classList.remove('hidden');
+      dom.clear(changeList);
+
+      entries.forEach(([field, change]) => {
+        const li = document.createElement('li');
+        const strong = dom.element('strong', { text: field });
+        li.append(strong, document.createTextNode(`: ${change.before || 'n/a'} -> ${change.after || 'n/a'}`));
+        changeList.appendChild(li);
+      });
+    }
+
+    // Show risk summary and list unique risk findings
+    function renderRisk(risk) {
+      if (!risk || typeof risk.score !== 'number') {
+        riskSection.classList.add('hidden');
+        dom.clear(riskSummary);
+        dom.clear(riskList);
+        return;
+      }
+
+      riskSection.classList.remove('hidden');
+
+      const riskLevel = (risk.label || 'low').toLowerCase();
+      dom.clear(riskSummary);
+      riskSummary.appendChild(dom.element('span', {
+        className: `risk-chip risk-${riskLevel}`,
+        text: `Risk ${riskLevel.toUpperCase()} • Score ${risk.score}`
+      }));
+
+      if (Array.isArray(risk.findings) && risk.findings.length) {
+
+        const finalList = [];
+        const seenItems = new Set();
+
+        risk.findings.forEach(item => {
+          const key = `${item.label || ''}|${item.severity || ''}|${item.advice || ''}`;
+
+          if (seenItems.has(key)) return;
+
+          seenItems.add(key);
+          finalList.push(item);
+        });
+
+        dom.clear(riskList);
+        finalList.forEach(item => {
+          const li = document.createElement('li');
+          const severity = dom.element('strong', { text: (item.severity || '').toUpperCase() });
+          li.appendChild(severity);
+          if (item.label) {
+            li.appendChild(document.createTextNode(`: ${item.label}`));
+          }
+          li.appendChild(document.createElement('br'));
+          li.appendChild(document.createTextNode(item.advice || ''));
+          riskList.appendChild(li);
+        });
+
+      } else {
+        dom.clear(riskList);
+        riskList.appendChild(dom.element('li', { text: 'No vulnerability signatures matched.' }));
+      }
+    }
+
+    // Build and display a simple network health report
+    function renderHealthCheck(data) {
+      const healthResults = document.getElementById('healthResults');
+
+      if (!data || !data.health_results) {
+        healthResults.textContent = 'No data available.';
+        return;
+      }
+
+      dom.clear(healthResults);
+      healthResults.appendChild(dom.element('h4', { text: 'Network Health Report' }));
+      const list = document.createElement('ul');
+
+      lastScanPayload.devices.forEach(device => {
+        const ip = device.ip;
+        let issues = [];
+        const health = data.health_results[ip];
+
+        if (!health || !health.reachable) {
+          issues.push('No ping response');
+        } else if (health.latency > 150) {
+          issues.push('High latency');
+        }
+
+        // Risk
+        if (device.risk && device.risk.score >= 6) {
+          issues.push(`Risk: ${device.risk.label}`);
+        }
+
+        // Open Ports
+        if (Array.isArray(device.open_ports) && device.open_ports.length > 4) {
+          issues.push(`Many open ports (${device.open_ports.length})`);
+        }
+
+        // Unknown vendor
+        if (!device.vendor || device.vendor === 'Unknown') {
+          issues.push('Unknown Vendor');
+        }
+
+        const li = document.createElement('li');
+        li.appendChild(dom.element('strong', { text: ip }));
+        if (issues.length) {
+          li.appendChild(document.createTextNode(`: Warning: ${issues.join(', ')}`));
+        } else {
+          li.appendChild(document.createTextNode(': Healthy'));
+        }
+        list.appendChild(li);
+      });
+
+      healthResults.appendChild(list);
+    }
+
+    function renderDriveResults(drives) {
+      const driveResults = document.getElementById('driveResults');
+      dom.clear(driveResults);
+      driveResults.appendChild(dom.element('h4', { text: 'Shared Drives:' }));
+
+      const list = document.createElement('ul');
+      drives.forEach(d => {
+        const shares = Array.isArray(d.shares) && d.shares.length
+          ? d.shares.join(', ')
+          : 'Access denied (SMB protected)';
+        const li = document.createElement('li');
+        li.appendChild(dom.element('strong', { text: d.ip || 'Unknown IP' }));
+        li.appendChild(document.createTextNode(`: ${shares}`));
+        list.appendChild(li);
+      });
+      driveResults.appendChild(list);
+    }
+   
+    // Show list of past scan sessions
+    function renderHistory(items) {
+      dom.clear(historyList);
+      dom.clear(historyDetail);
+      if (!items.length) {
+        historyList.appendChild(dom.element('li', { text: 'No scans recorded yet.' }));
+        return;
+      }
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.dataset.sessionId = item.id;
+        const started = item.started_at ? new Date(item.started_at).toLocaleString() : 'unknown time';
+        li.textContent =
+  `     #${item.id} — ${started} • ${item.network || ''} +${item.summary.new} / ↺ ${item.summary.updated} / -${item.summary.offline}`;
+        historyList.appendChild(li);
+      });
+    }
+
+    // Show details for a selected scan session
+    function renderHistoryDetail(snapshots) {
+      if (!snapshots.length) {
+        historyDetail.textContent = 'Session contains no device snapshots.';
+        return;
+      }
+      dom.clear(historyDetail);
+      const list = document.createElement('ul');
+      list.style.margin = '0';
+      list.style.paddingLeft = '18px';
+      list.style.maxHeight = '180px';
+      list.style.overflowY = 'auto';
+      snapshots.slice(0, 20).forEach(snap => {
+        const li = document.createElement('li');
+        li.appendChild(dom.element('strong', { text: (snap.status || '').toUpperCase() }));
+        li.appendChild(document.createTextNode(` ${snap.ip || 'n/a'}`));
+        if (snap.hostname) {
+          li.appendChild(document.createTextNode(` (${snap.hostname})`));
+        }
+        list.appendChild(li);
+      });
+      historyDetail.appendChild(list);
+    }
+    
+    // Update dashboard counts and average latency
+    function updateDashboard() {
+      const data = lastScanPayload.devices || [];
+      document.getElementById('count-total').textContent = data.length;
+      document.getElementById('count-router').textContent = data.filter(d => ['router', 'isp_gateway', 'extender'].includes(d.type)).length;      
+      document.getElementById('count-printer').textContent = data.filter(d => d.type === 'printer').length;
+      document.getElementById('count-desktop').textContent = data.filter(d => d.type === 'laptop' || d.type === 'computer').length;
+      document.getElementById('count-phone').textContent = data.filter(d => d.type === 'phone').length;
+      const lats = data.map(d => d.latency).filter(v => v != null);
+      // Calculate average latency
+      const avg = lats.length ? Math.round(lats.reduce((a,b)=>a+b,0)/lats.length) : 0;
+      document.getElementById('count-latency').textContent = avg + ' ms';
+    }
+
+    // Update scan summary counts for new updated and offline devices
+    function updateSummary(summary = {}) {
+      summaryNew.textContent = `${summary.new || 0} New`;
+      summaryUpdated.textContent = `${summary.updated || 0} Updated`;
+      summaryOffline.textContent = `${summary.offline || 0} Offline`;
+    }
+
+    // Display open ports in a table
+    function displayPorts(ports) {
+      const resultDiv = document.getElementById('portResults');
+
+      if (!ports || !ports.length) {
+        resultDiv.textContent = 'No open ports found yet.';
+        return;
+      }
+
+      dom.clear(resultDiv);
+      const table = dom.element('table', { className: 'port-table' });
+      const header = document.createElement('tr');
+      ['Port', 'Service', 'Banner'].forEach(label => {
+        header.appendChild(dom.element('th', { text: label }));
+      });
+      table.appendChild(header);
+
+      ports.forEach(port => {
+        const row = document.createElement('tr');
+        row.appendChild(dom.element('td', { text: port.port || '-' }));
+        row.appendChild(dom.element('td', { text: port.service || '-' }));
+        row.appendChild(dom.element('td', { text: port.banner || '-' }));
+        table.appendChild(row);
+      });
+
+      resultDiv.appendChild(table);
+    }
+
+    // Reset device detail panel to default state
+    function resetDetails() {
+      detailIP.textContent = '—';
+      detailMAC.textContent = '—';
+      detailHost.textContent = '—';
+      detailVendor.textContent = '—';
+      detailLatency.textContent = '—';
+      detailStatus.textContent = '—';
+      changeBlock.classList.add('hidden');
+      dom.clear(changeList);
+      riskSection.classList.add('hidden');
+      dom.clear(riskSummary);
+      dom.clear(riskList);
+      dom.clear(document.getElementById('portResults'));
+      dom.clear(document.getElementById('driveResults'));
+    }
+
+    // Load recent scan history and display it
+    function loadScanHistory() {
+    api.getJson('/api/scan-history?limit=12')
+      .then(data => {
+        const history = data.history || [];
+        renderHistory(history);
+      })
+      .catch(err => {
+        console.error('History load error:', err);
+        dom.clear(historyList);
+        historyList.appendChild(dom.element('li', { text: 'Unable to load history.' }));
+      });
+  }
+    
+    
+  
+    // Helpers
+
+    // Return icon based on device type
+    function getIconForDevice(d) {
+      return ICONS[d.type] || ICONS.default;
+    }
+
+    // Get selected port range or default range
+    function getPortList() {
+    const wellKnownChecked = document.getElementById('wellKnownOnly').checked;
+    const rangeInput = document.getElementById('portRange').value.trim();
+
+    if (wellKnownChecked) {
+      return "1-1024";
+    }
+    if (!rangeInput) {
+      return null;
+    }
+    return rangeInput;
+  }
+
+    // Return color based on latency value
+    function getLatencyColor(latency) {
+      if (latency == null) return '#28a745';
+      if (latency < 50) return '#28a745';
+      if (latency < 150) return '#ffc107';
+      return '#dc3545';
+    }
+
+    // Return color based on device status or latency
+    function getStatusColor(status, latency) {
+      switch ((status || '').toLowerCase()) {
+        case 'new': return '#16a34a';
+        case 'updated': return '#f97316';
+        case 'offline': return '#6b7280';
+        default: return getLatencyColor(latency);
+      }
+    }
+
+
+
+    // Fetch interfaces and creates dropdown box via options
+    api.getJson('/api/interfaces').then(interfaces => {
+      interfaces.forEach(i => {
+          const opt = document.createElement('option');
+          // set option value and text content and append
+          opt.value = i.iface;
+          opt.textContent = `${i.desc} (${i.ip})`;
+          select.appendChild(opt);
+        });
+        // Auto select first interface
+        if (select.options.length) select.selectedIndex = 0;
+      });
+
+   loadScanHistory();
+
+  </script>
+  <script>
+
+    document.getElementById('aiAnalyzeBtn').addEventListener('click', () => {
+    const question = document.getElementById('aiQuestion').value.trim();
+    const aiResponseDiv = document.getElementById('aiResponse');
+
+    // Check if a scan has happened this session
+    if (!lastScanPayload.devices.length) {
+      aiResponseDiv.textContent = 'Run a network scan first.';
+      return;
+    }
+
+    aiResponseDiv.textContent = 'Analyzing network...';
+
+    // Fetch responce from routes.py /analyze
+    api.postJson('/api/analyze', {
+        devices: lastScanPayload.devices,
+        question: question || "Summarize this network scan."
+      })
+    .then(data => {
+    aiResponseDiv.textContent = data.analysis;  })
+    .catch(err => {
+      aiResponseDiv.textContent = 'Error analyzing network.';
+      console.error(err);
+    });
+  });
+  </script>
+</body>
+</html>
